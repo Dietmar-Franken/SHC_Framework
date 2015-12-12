@@ -8,12 +8,12 @@ use RWF\Form\DefaultHtmlForm;
 use RWF\Form\FormElements\IntegerInputField;
 use RWF\Form\FormElements\OnOffOption;
 use RWF\Form\FormElements\TextField;
+use SHC\Core\Exception\AssertException;
+use SHC\Core\SHC;
 use SHC\Form\FormElements\ButtonTextChooser;
 use SHC\Form\FormElements\GroupPremissonChooser;
 use SHC\Form\FormElements\IconChooser;
 use SHC\Form\FormElements\RoomChooser;
-use SHC\Form\FormElements\SwitchPointsChooser;
-use SHC\Room\Room;
 use SHC\Switchable\Switchables\Countdown;
 
 /**
@@ -38,7 +38,7 @@ class CountdownForm extends DefaultHtmlForm {
         RWF::getLanguage()->disableAutoHtmlEndocde();
 
         //Name der Aktivitaet
-        $name = new TextField('name', ($countdown instanceof Countdown ? $countdown->getName() : ''), array('minlength' => 3, 'maxlength' => 25));
+        $name = new TextField('name', ($countdown instanceof Countdown ? $countdown->getName() : ''), array('minlength' => 3, 'maxlength' => 40));
         $name->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addCountdown.name'));
         $name->setDescription(RWF::getLanguage()->get('acp.switchableManagement.form.addCountdown.name.description'));
         $name->requiredField(true);
@@ -83,6 +83,9 @@ class CountdownForm extends DefaultHtmlForm {
                 //slow
                 $min = 60;
                 break;
+            default:
+
+                throw new AssertException("Die Einstellung 'shc.shedulerDaemon.performanceProfile' ist Fehlerhaft");
         }
         $interval = new IntegerInputField('interval', ($countdown instanceof Countdown ? $countdown->getInterval() : 30), array('min' => $min, 'max' => 14400, 'step' => 5));
         $interval->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addCountdown.interval'));

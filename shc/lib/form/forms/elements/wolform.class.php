@@ -8,12 +8,9 @@ use RWF\Form\DefaultHtmlForm;
 use RWF\Form\FormElements\OnOffOption;
 use RWF\Form\FormElements\TextField;
 use SHC\Form\FormElements\GroupPremissonChooser;
-use SHC\Form\FormElements\IconChooser;
 use SHC\Form\FormElements\IpAddressInputField;
 use SHC\Form\FormElements\MacAddressInputField;
 use SHC\Form\FormElements\RoomChooser;
-use SHC\Form\FormElements\SwitchPointsChooser;
-use SHC\Room\Room;
 use SHC\Switchable\Switchables\WakeOnLan;
 
 /**
@@ -38,7 +35,7 @@ class WolForm extends DefaultHtmlForm {
         RWF::getLanguage()->disableAutoHtmlEndocde();
 
         //Name des GPIO
-        $name = new TextField('name', ($wakeOnLan instanceof WakeOnLan ? $wakeOnLan->getName() : ''), array('minlength' => 3, 'maxlength' => 25));
+        $name = new TextField('name', ($wakeOnLan instanceof WakeOnLan ? $wakeOnLan->getName() : ''), array('minlength' => 3, 'maxlength' => 40));
         $name->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addWol.name'));
         $name->setDescription(RWF::getLanguage()->get('acp.switchableManagement.form.addWol.name.description'));
         $name->requiredField(true);

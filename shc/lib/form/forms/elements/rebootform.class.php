@@ -9,7 +9,6 @@ use RWF\Form\FormElements\OnOffOption;
 use RWF\Form\FormElements\TextField;
 use SHC\Form\FormElements\GroupPremissonChooser;
 use SHC\Form\FormElements\RoomChooser;
-use SHC\Room\Room;
 use SHC\Switchable\Switchables\Reboot;
 
 /**
@@ -34,7 +33,7 @@ class RebootForm extends DefaultHtmlForm {
         RWF::getLanguage()->disableAutoHtmlEndocde();
 
         //Name der Funksteckdose
-        $name = new TextField('name', ($reboot instanceof Reboot ? $reboot->getName() : ''), array('minlength' => 3, 'maxlength' => 25));
+        $name = new TextField('name', ($reboot instanceof Reboot ? $reboot->getName() : ''), array('minlength' => 3, 'maxlength' => 40));
         $name->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addReboot.name'));
         $name->setDescription(RWF::getLanguage()->get('acp.switchableManagement.form.addReboot.name.description'));
         $name->requiredField(true);

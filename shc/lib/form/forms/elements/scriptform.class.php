@@ -11,9 +11,7 @@ use SHC\Form\FormElements\ButtonTextChooser;
 use SHC\Form\FormElements\GroupPremissonChooser;
 use SHC\Form\FormElements\IconChooser;
 use SHC\Form\FormElements\RoomChooser;
-use SHC\Room\Room;
 use SHC\Switchable\Switchables\Script;
-use SHC\Switchable\Switchables\Shutdown;
 
 /**
  * Funksteckdose Formular
@@ -37,7 +35,7 @@ class ScriptForm extends DefaultHtmlForm {
         RWF::getLanguage()->disableAutoHtmlEndocde();
 
         //Name der Funksteckdose
-        $name = new TextField('name', ($script instanceof Script ? $script->getName() : ''), array('minlength' => 3, 'maxlength' => 25));
+        $name = new TextField('name', ($script instanceof Script ? $script->getName() : ''), array('minlength' => 3, 'maxlength' => 40));
         $name->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addScript.name'));
         $name->setDescription(RWF::getLanguage()->get('acp.switchableManagement.form.addScript.name.description'));
         $name->requiredField(true);

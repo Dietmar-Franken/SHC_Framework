@@ -16,7 +16,6 @@ use RWF\User\UserEditor;
 use RWF\User\User;
 use RWF\Language\Language;
 use RWF\Template\Template;
-use RWF\Util\CliUtil;
 
 /**
  * Kernklasse (initialisiert das RWF)
@@ -34,7 +33,7 @@ class RWF {
      *
      * @var String
      */
-    const VERSION = '2.2.2';
+    const VERSION = '2.2.5';
 
     /**
      * Einstellungen
@@ -101,8 +100,6 @@ class RWF {
 
     public function __construct() {
 
-        global $argv;
-
         //Multibyte Engine Konfigurieren
         if (function_exists('mb_internal_encoding')) {
 
@@ -113,48 +110,12 @@ class RWF {
             define('MULTIBYTE_STRING', false);
         }
 
-        //APPs einlesen
-        $dir = opendir(PATH_BASE);
-        while($element = readdir($dir)) {
-
-            //ueberspringen
-            if($element == '.' || $element == '..') {
-
-                continue;
-            }
-
-            //APP Ordner suchen und app.json einlesen
-            if(is_dir($element) && $element != 'rwf' && file_exists(PATH_BASE . $element .'/app.json')) {
-
-                $app = json_decode(file_get_contents(PATH_BASE . $element .'/app.json'));
-                if(isset($app->installed) && $app->installed == true) {
-
-                    self::$appList[] = $app;
-                }
-            }
-        }
-
-        //APP Liste sortieren
-        $orderFunction = function($a, $b) {
-
-            if($a->order == $b->order) {
-
-                return 0;
-            }
-
-            if($a->order < $b->order) {
-
-                return -1;
-            }
-            return 1;
-        };
-        usort(self::$appList, $orderFunction);
-
         //Anfrage/Antwort initialisieren
         if (ACCESS_METHOD_HTTP) {
             
             //Anfrage vom Browser
             $this->initDatabase();
+            $this->loadApps();
             $this->initSettings();
             $this->initRequest();
             $this->initSession();
@@ -179,11 +140,65 @@ class RWF {
     }
 
     /**
+     * pruefen ob die angeforderte App installiert ist
+     */
+    protected function loadApps() {
+
+        $db = self::getDatabase();
+        $apps = $db->hGetAllArray('apps');
+        foreach($apps as $app) {
+
+            self::$appList[] = $app;
+        }
+
+        //APP Liste sortieren
+        $orderFunction = function($a, $b) {
+
+            if($a['order'] == $b['order']) {
+
+                return 0;
+            }
+
+            if($a['order'] < $b['order']) {
+
+                return -1;
+            }
+            return 1;
+        };
+        usort(self::$appList, $orderFunction);
+    }
+
+    /**
      * initialisiert die Einstellungen
      */
     protected function initSettings() {
 
-        self::$settings = new Settings();
+        $settings = new Settings();
+
+        //RWF Einstellungen hinzufuegen
+        //Session
+        $settings->addSetting('rwf.session.allowLongTimeLogin', Settings::TYPE_BOOL, true);
+
+        //Datum/Zeit
+        $settings->addSetting('rwf.date.Timezone', Settings::TYPE_STRING, 'Europe/Berlin');
+        $settings->addSetting('rwf.date.defaultDateFormat', Settings::TYPE_STRING, 'd.m.Y');
+        $settings->addSetting('rwf.date.defaultTimeFormat', Settings::TYPE_STRING, 'H:i:s');
+        $settings->addSetting('rwf.date.useTimeline', Settings::TYPE_BOOL, true);
+        $settings->addSetting('rwf.date.sunriseOffset', Settings::TYPE_INT, 0);
+        $settings->addSetting('rwf.date.sunsetOffset', Settings::TYPE_INT, 0);
+        $settings->addSetting('rwf.date.Latitude', Settings::TYPE_FLOAT, 50.0);
+        $settings->addSetting('rwf.date.Longitude', Settings::TYPE_FLOAT, 12.0);
+
+        //Sprache
+        $settings->addSetting('rwf.language.defaultLanguage', Settings::TYPE_STRING, 'de');
+
+        //Fritz!Box
+        $settings->addSetting('rwf.fritzBox.address', Settings::TYPE_STRING, '');
+        $settings->addSetting('rwf.fritzBox.has5GHzWlan', Settings::TYPE_BOOL, false);
+        $settings->addSetting('rwf.fritzBox.user', Settings::TYPE_STRING, '');
+        $settings->addSetting('rwf.fritzBox.password', Settings::TYPE_STRING, '');
+
+        self::$settings = $settings;
     }
 
     /**
@@ -245,6 +260,7 @@ class RWF {
      */
     protected function initUser() {
 
+        UserEditor::getInstance()->loadData();
         $user = UserEditor::getInstance()->getUserByAuthCode(self::$session->get('authCode'));
         if ($user instanceof User) {
 
@@ -395,16 +411,16 @@ class RWF {
      */
     public function finalize() {
 
-        //Einstellungen Speichern
-        if (self::$settings instanceof Settings) {
-
-            self::$settings->finalize();
-        }
-
         //Sessionobjekt abschliesen
         if (self::$session instanceof Session) {
 
             self::$session->finalize();
+        }
+
+        //Datenbankverbindung beenden
+        if(self::$redis instanceof Redis) {
+
+            self::$redis->close();
         }
     }
 

@@ -1,12 +1,11 @@
 <?php
 
-namespace SHC\Backup;
+namespace RWF\Backup;
 
 //Imports
+use RWF\Core\RWF;
 use RWF\Date\DateTime;
 use RWF\Util\FileUtil;
-use RWF\XML\XmlFileManager;
-use SHC\Core\SHC;
 
 /**
  * Backup Verwaltung
@@ -50,7 +49,7 @@ class BackupEditor {
     /**
      * Singleton Instanz
      *
-     * @var \SHC\Backup\BackupEditor
+     * @var \RWF\Backup\BackupEditor
      */
     protected static $instance = null;
 
@@ -74,7 +73,7 @@ class BackupEditor {
      * setzt den Pfad in dem sich die Backups befinden
      *
      * @param  String $path Pfad
-     * @return \SHC\Backup\BackupEditor
+     * @return \RWF\Backup\BackupEditor
      */
     public function setPath($path){
 
@@ -97,7 +96,7 @@ class BackupEditor {
      * gibt eine Backup aufgrund eines MD5 Haches des Dateinamens zurueck
      *
      * @param  String $hash MD5 Hash
-     * @return \SHC\Backup\Backup
+     * @return \RWF\Backup\Backup
      */
     public function getBackupByMD5Hash($hash) {
 
@@ -165,7 +164,7 @@ class BackupEditor {
 
         if(isset($this->backups[$hash])) {
 
-            /* @var $backup \SHC\Backup\Backup  */
+            /* @var $backup \RWF\Backup\Backup  */
             $backup = $this->backups[$hash];
             if(@unlink($backup->getPath() . $backup->getFileName())) {
 
@@ -183,147 +182,77 @@ class BackupEditor {
      */
     protected function makeFileBackup($ignoreHiddenFiles = false) {
 
-        $filename = $this->backupPath . 'shc__' . DateTime::now()->format('Y_m_d__H_i') .'__'. md5(DateTime::now()->getTimestamp()) . '.zip';
+        $filename = $this->backupPath . 'rwf__' . DateTime::now()->format('Y_m_d__H_i') .'__'. md5(DateTime::now()->getTimestamp()) . '.zip';
         $zip = new \ZipArchive();
         if ($zip->open($filename, \ZIPARCHIVE::CREATE | \ZIPARCHIVE::OVERWRITE) === true) {
 
             //Datanbank verbindung aufbauen
-            $db = SHC::getDatabase();
-
-            //Daten aus Redis in eine JSON Datei schreiben
+            $db = RWF::getDatabase();
+            $keys = $db->getKeys('*');
             $data = array();
 
-            //AutoIncrements
-            $data['autoIncrement:conditions'] = $db->get('autoIncrement:conditions');
-            $data['autoIncrement:events'] = $db->get('autoIncrement:events');
-            $data['autoIncrement:roomView'] = $db->get('autoIncrement:roomView');
-            $data['autoIncrement:roomView_order'] = $db->get('autoIncrement:roomView_order');
-            $data['autoIncrement:rooms'] = $db->get('autoIncrement:rooms');
-            $data['autoIncrement:switchServers'] = $db->get('autoIncrement:switchServers');
-            $data['autoIncrement:switchables'] = $db->get('autoIncrement:switchables');
-            $data['autoIncrement:switchpoints'] = $db->get('autoIncrement:switchpoints');
-            $data['autoIncrement:usersrathome'] = $db->get('autoIncrement:usersrathome');
-
-            //Bedingungen
-            if($db->exists('conditions')) {
-
-                $data['conditions'] = array();
-                foreach($db->hGetAll('conditions') as $id => $value) {
-
-                    $data['conditions'][$id] = $value;
-                }
-            }
-
-            //Ereignisse
-            if($db->exists('events')) {
-
-                $data['events'] = array();
-                foreach($db->hGetAll('events') as $id => $value) {
-
-                    $data['events'][$id] = $value;
-                }
-            }
-
-            //Raum uebersicht
-            if($db->exists('roomView')) {
-
-                $data['roomView'] = array();
-                foreach($db->hGetAll('roomView') as $id => $value) {
-
-                    $data['roomView'][$id] = $value;
-                }
-            }
-
-            //Raeume
-            if($db->exists('rooms')) {
-
-                $data['rooms'] = array();
-                foreach($db->hGetAll('rooms') as $id => $value) {
-
-                    $data['rooms'][$id] = $value;
-                }
-            }
-
-            //Sensorpunkte
-            if($db->exists('sensors:sensorPoints')) {
-
-                $data['sensors:sensorPoints'] = array();
-                foreach($db->hGetAll('sensors:sensorPoints') as $id => $value) {
-
-                    $data['sensors:sensorPoints'][$id] = $value;
-                }
-            }
-
-            //Sensoren
-            if($db->exists('sensors:sensors')) {
-
-                $data['sensors:sensors'] = array();
-                foreach($db->hGetAll('sensors:sensors') as $id => $value) {
-
-                    $data['sensors:sensors'][$id] = $value;
-                }
-            }
-
-            //Sensordaten
-            $keys = $db->getKeys('sensors:sensorData:*');
-            $data['sensors:sensorData'] = array();
             foreach($keys as $key) {
 
-                foreach($db->lRange(str_replace('shc:', '', $key), 0, -1) as $id => $value) {
+                $key = preg_replace('#^rwf\:#i', '', $key);
+                $type = $db->type($key);
+                switch($type) {
 
-                    $data['sensors:sensorData'][str_replace('shc:sensors:sensorData:', '', $key)][$id] = $value;
+                    case \Redis::REDIS_STRING:
+
+                        $data[] = array(
+                            'type' => \Redis::REDIS_STRING,
+                            'key' => $key,
+                            'value' => $db->get($key),
+                            'ttl' => $db->ttl($key)
+                        );
+                        break;
+                    case \Redis::REDIS_SET:
+
+                        $data[] = array(
+                            'type' => \Redis::REDIS_SET,
+                            'key' => $key,
+                            'value' => $db->sMembers($key),
+                            'ttl' => $db->ttl($key)
+                        );
+                        break;
+                    case \Redis::REDIS_LIST:
+
+                        $length = $db->lLen($key);
+                        $values = array();
+                        for($i = 0; $i < $length; $i++) {
+
+                            $values[$i] = $db->lIndex($key, $i);
+                        }
+                        $data[] = array(
+                            'type' => \Redis::REDIS_LIST,
+                            'key' => $key,
+                            'value' => $values,
+                            'ttl' => $db->ttl($key)
+                        );
+                        break;
+                    case \Redis::REDIS_ZSET:
+
+                        $data[] = array(
+                            'type' => \Redis::REDIS_ZSET,
+                            'key' => $key,
+                            'value' => $db->zRange($key, 0, -1, true),
+                            'ttl' => $db->ttl($key)
+                        );
+                        break;
+                    case \Redis::REDIS_HASH:
+
+                        $data[] = array(
+                            'type' => \Redis::REDIS_HASH,
+                            'key' => $key,
+                            'value' => $db->hGetAll($key),
+                            'ttl' => $db->ttl($key)
+                        );
+                        break;
                 }
-            }
 
-            //Schaltserver
-            if($db->exists('switchServers')) {
-
-                $data['switchServers'] = array();
-                foreach($db->hGetAll('switchServers') as $id => $value) {
-
-                    $data['switchServers'][$id] = $value;
-                }
-            }
-
-            //schaltbare Elemente
-            if($db->exists('switchables')) {
-
-                $data['switchables'] = array();
-                foreach($db->hGetAll('switchables') as $id => $value) {
-
-                    $data['switchables'][$id] = $value;
-                }
-            }
-
-            //Schaltpunkte
-            if($db->exists('switchpoints')) {
-
-                $data['switchpoints'] = array();
-                foreach($db->hGetAll('switchpoints') as $id => $value) {
-
-                    $data['switchpoints'][$id] = $value;
-                }
-            }
-
-            //Benutzer zu Hause
-            if($db->exists('usersrathome')) {
-
-                $data['usersrathome'] = array();
-                foreach($db->hGetAll('usersrathome') as $id => $value) {
-
-                    $data['usersrathome'][$id] = $value;
-                }
             }
 
             $zip->addFromString('database_dump.json', json_encode($data));
-
-            //XML Dateien ins Archiv kopieren
-            $xmlFiles = XmlFileManager::getInstance()->listKnownXmlFiles();
-            foreach($xmlFiles as $xmlFile) {
-
-                $info = pathinfo($xmlFile['file']);
-                $zip->addFile($xmlFile['file'], $info['basename']);
-            }
 
             //Archiv schliesen
             $zip->close();
@@ -335,10 +264,10 @@ class BackupEditor {
     /**
      * packt einen Ordner in ein Zip Archiv
      *
-     * @param  ZipArchive $zip               geoeffnetes Zip Archiv
-     * @param  String     $path              Pfad im Dateisystem
-     * @param  String     $innerArchivePath  Pfad im Archiv
-     * @param  Boolean    $ignoreHiddenFiles versteckte Dateien ignorieren
+     * @param  \ZipArchive $zip               geoeffnetes Zip Archiv
+     * @param  String      $path              Pfad im Dateisystem
+     * @param  String      $innerArchivePath  Pfad im Archiv
+     * @param  Boolean     $ignoreHiddenFiles versteckte Dateien ignorieren
      * @return Boolean
      */
     protected function addDir($zip, $path, $innerArchivePath = '', $ignoreHiddenFiles = false) {
@@ -404,7 +333,7 @@ class BackupEditor {
     /**
      * gibt den Backup Editor zurueck
      *
-     * @return \SHC\Backup\BackupEditor
+     * @return \RWF\Backup\BackupEditor
      */
     public static function getInstance() {
 

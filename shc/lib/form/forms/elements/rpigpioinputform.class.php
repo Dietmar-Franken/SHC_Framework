@@ -8,12 +8,9 @@ use RWF\Form\DefaultHtmlForm;
 use RWF\Form\FormElements\OnOffOption;
 use RWF\Form\FormElements\TextField;
 use SHC\Form\FormElements\GroupPremissonChooser;
-use SHC\Form\FormElements\IconChooser;
 use SHC\Form\FormElements\RoomChooser;
 use SHC\Form\FormElements\RPiGpioChooser;
-use SHC\Form\FormElements\SwitchPointsChooser;
 use SHC\Form\FormElements\SwitchServerChooser;
-use SHC\Room\Room;
 use SHC\Switchable\Readables\RpiGpioInput;
 
 /**
@@ -38,7 +35,7 @@ class RpiGpioInputForm extends DefaultHtmlForm {
         RWF::getLanguage()->disableAutoHtmlEndocde();
 
         //Name des GPIO
-        $name = new TextField('name', ($rpiGpioInput instanceof RpiGpioInput ? $rpiGpioInput->getName() : ''), array('minlength' => 3, 'maxlength' => 25));
+        $name = new TextField('name', ($rpiGpioInput instanceof RpiGpioInput ? $rpiGpioInput->getName() : ''), array('minlength' => 3, 'maxlength' => 40));
         $name->setTitle(RWF::getLanguage()->get('acp.switchableManagement.form.addGpioOutput.name'));
         $name->setDescription(RWF::getLanguage()->get('acp.switchableManagement.form.addGpioOutput.name.description'));
         $name->requiredField(true);
