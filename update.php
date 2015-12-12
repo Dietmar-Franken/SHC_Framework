@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Update von Version 2.2.1 auf 2.2.1
+ * Update von Version 2.2.3 auf 2.2.4
  *
  * @author     Oliver Kleditzsch
  * @copyright  Copyright (c) 2015, Oliver Kleditzsch
@@ -13,47 +13,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hilfsfunktionen /////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-define('TYPE_BOOLEAN', 'bool');
-define('TYPE_STRING', 'string');
-define('TYPE_INTEGER', 'int');
-
-function addSetting($name, $value, $type) {
-
-    global $settingsXml;
-
-    //pruefen ob Einstellung schon vorhanden
-    foreach($settingsXml->setting as $setting) {
-
-        $attr = $setting->attributes();
-        if($attr->name == $name) {
-
-            return;
-        }
-    }
-
-    $setting = $settingsXml->addChild('setting');
-    $setting->addAttribute('name', $name);
-    $setting->addAttribute('value', $value);
-    $setting->addAttribute('type', $type);
-}
-
-function addPremission($xml, $name, $value) {
-
-    //pruefen ob Recht schon vorhanden
-    foreach($xml->premission as $premission) {
-
-        $attr = $premission->attributes();
-        if($attr->name == $name) {
-
-            return;
-        }
-    }
-
-    $premission = $xml->addChild('premission');
-    $premission->addAttribute('name', $name);
-    $premission->addAttribute('value', $value);
-}
 
 function randomStr($length = 10) {
 
@@ -86,7 +45,7 @@ class CliUtil {
     /**
      * STDIN Datenstrom
      *
-     * @var Recource
+     * @var recource
      */
     protected static $in = null;
 
@@ -231,7 +190,7 @@ class CliUtil {
      * gibt eine Eingabeaufforderung aus und gibt die Eingabe als String rurueck
      *
      * @param  String   $message Meldung
-     * @param  Recource $handle  Eingabestrom
+     * @param  recource $handle  Eingabestrom
      * @return String            EIngabe
      */
     public function input($message, &$handle = null) {
@@ -348,57 +307,103 @@ class CliUtil {
 $cli = new CliUtil();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Datenbank verbinden /////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// DB config laden
+$dbConfig = array();
+if(file_exists(__DIR__ .'/rwf/db.config.php')) {
+
+    require_once(__DIR__ .'/rwf/db.config.php');
+} else {
+
+    $cli->writeColored("Das RWF ist nicht installiert, installier das RWF und ab der nächsten Version kannst du dann das Update durchführen!", "red");
+    exit(1);
+}
+
+$host = $dbConfig['host'];
+$port = $dbConfig['port'];
+$timeout = $dbConfig['timeout'];
+$db = $dbConfig['db'];
+$pass = $dbConfig['pass'];
+
+//Redis Datenbank Verbindung aufbauen
+$redis = new Redis();
+
+//Verbinden
+if(!$redis->connect($host, $port, $timeout)) {
+
+    throw new \Exception('Verbindung zur Datenbank fehlgeschlagen', 1200);
+}
+
+//Anmelden
+if($pass != '') {
+
+    if(!$redis->auth($pass)) {
+
+        throw new \Exception('Authentifizierung Fehlgeschlagen', 1201);
+    }
+}
+
+//Datenbank auswaehlen
+if(!$redis->select($db)) {
+
+    throw new \Exception('Auswahl der Datenbank Fehlgeschlagen', 1202);
+}
+
+//Optionen
+$redis->setOption(Redis::OPT_PREFIX, 'rwf:');
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Update vorbereiten //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Initialisieren
 $shcInstalled = false;
-$shcApiLevel = 10;
+$shcApiLevel = 12;
 $pccInstalled = false;
-$pccApiLevel = 10;
+$pccApiLevel = 12;
 
-//SHC
-if(file_exists('./shc/app.json')) {
+//SHC App Daten laden
+if($redis->hExists("apps", "shc")) {
 
     $shcInstalled = true;
-    $shcApp = json_decode(file_get_contents('./shc/app.json'), true);
-    if(isset($shcApp['apLevel'])) {
+    $shcAppData = json_decode($redis->hGet("apps", "shc"), true);
+    if(isset($shcAppData['apLevel'])) {
 
-        $shcApiLevel = (int) $shcApp['apLevel'];
+        $shcApiLevel = (int) $shcAppData['apLevel'];
     }
 }
 
-//PCC
-if(file_exists('./pcc/app.json')) {
+//PCC App Daten laden
+if($redis->hExists("apps", "pcc")) {
 
     $pccInstalled = true;
-    $pccApp = json_decode(file_get_contents('./pcc/app.json'), true);
-    if(isset($pccApp['apLevel'])) {
+    $pccAppData = json_decode($redis->hGet("apps", "pcc"), true);
+    if(isset($pccAppData['apLevel'])) {
 
-        $pccApiLevel = (int) $pccApp['apLevel'];
+        $pccApiLevel = (int) $pccAppData['apLevel'];
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Update v2.2.1 auf v2.2.2  (API Level 10 auf 11) /////////////////////////////////////////////////////////////////////
+// Update v2.2.3 auf v2.2.4  (API Level 10 auf 11) /////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //SHC
-if($shcInstalled === true && $shcApiLevel == 10) {
+if($shcInstalled === true && $shcApiLevel == 12) {
 
     //Update Funktionen
-
-    //apiLevel hochzaehlen
-    $shcApiLevel++;
+    // nichts zu tun
+    $shcApiLevel = 13;
 }
 
 //PCC
-if($pccInstalled === true && $pccApiLevel == 10) {
+if($pccInstalled === true && $pccApiLevel == 12) {
 
     //Update Funktionen
-
-    //apiLevel hochzaehlen
-    $pccApiLevel++;
+    // nichts zu tun
+    $pccApiLevel = 13;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -408,35 +413,25 @@ if($pccInstalled === true && $pccApiLevel == 10) {
 //SHC
 if($shcInstalled === true) {
 
-    $content = '
-        {
-            "app": "shc",
-            "name": "Raspberry Pi SmartHome Control",
-            "icon": "./shc/inc/img/shc-icon.png",
-            "order": 10,
-            "installed": true,
-            "apLevel": '. $shcApiLevel .'
-        }';
-    file_put_contents('./shc/app.json', $content);
+    $shcAppData["apLevel"] = $shcApiLevel;
+    $redis->hSet("apps", "shc", json_encode($shcAppData));
 }
 
 //PCC
 if($pccInstalled === true) {
 
-    $content = '
-        {
-            "app": "pcc",
-            "name": "Raspberry Pi Control Center",
-            "icon": "./pcc/inc/img/pcc-icon.png",
-            "order": 20,
-            "installed": true,
-            "apLevel": '. $pccApiLevel .'
-        }';
-    file_put_contents('./pcc/app.json', $content);
+    $pccAppData["apLevel"] = $pccApiLevel;
+    $redis->hSet("apps", "pcc", json_encode($pccAppData));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// neue app.json Dateien schreiben /////////////////////////////////////////////////////////////////////////////////////
+// Datenbankverbindung beenden /////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+$redis->close();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Update erfolgreich //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 $cli->writeLineColored('Update erfolgreich', 'green');

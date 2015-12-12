@@ -214,7 +214,7 @@ class SSEResponse implements Response {
     /**
      * setzt den Intervall bis zur automatuschen neuverbindung
      *
-     * @param Intiger $interval Warteiźeit in Milisekunden
+     * @param int $interval Warteizeit in Milisekunden
      */
     public function addRetry($interval) {
 
@@ -325,7 +325,7 @@ class SSEResponse implements Response {
             }
 
             //Header
-            @header('HTTP/1.0 ' . $this->httpStatusCode, true);
+            @header('HTTP/1.0 ' . $this->httpState, true);
             @header('Content-type: ' . $this->httpContentType . '; charset=utf-8', true);
 
             foreach ($this->httpHeader as $header) {
