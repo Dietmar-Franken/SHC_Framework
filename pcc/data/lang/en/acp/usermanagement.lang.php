@@ -56,7 +56,7 @@ $l['acp.userManagement.prompt.deleteGroup.title'] = 'Delete usergroup';
 //$l['acp.userManagement.prompt.deleteGroup'] = 'Willst du die Benutzergruppe wirklich löschen?';
 $l['acp.userManagement.prompt.deleteGroup'] = 'Are you sure to delete the user group?';
 
-//Formulate
+//Formulare
 //Forms
 
 //$l['acp.userManagement.form.user.addDescription'] = 'Benutzer erstellen';
@@ -112,35 +112,33 @@ $l['acp.userManagement.form.group.desc'] = 'Description';
 //$l['acp.userManagement.form.group.desc.description'] = 'Beschreibung der Benutzergruppe';
 $l['acp.userManagement.form.group.desc.description'] = 'Description of the user group';
 
-//
-//
+//Meldungen
+//Messages
 
-//
-$l['acp.userManagement.form.error.invalidName'] = 'Der Benutzername darf nur folgende Zeichen enthalten: a-z 0-9 # _ ! - . , ; + * ?';
-//
-$l['acp.userManagement.form.error.nameNotAvailable'] =  'Der Benutzername ist bereits vergeben';
-//
-$l['acp.userManagement.form.error.passwordError'] =  'Die Passwörter stimmen nicht überein';
-//
-$l['acp.userManagement.form.success.addUser'] =  'Der Benutzer wurde erfolgreich erstellt';
-//
+//$l['acp.userManagement.form.error.invalidName'] = 'Der Benutzername darf nur folgende Zeichen enthalten: a-z 0-9 # _ ! - . , ; + * ?';
+$l['acp.userManagement.form.error.invalidName'] = 'The username must contain only the following characters: a-z 0-9 # _ ! - . , ; + * ?';
+//$l['acp.userManagement.form.error.nameNotAvailable'] =  'Der Benutzername ist bereits vergeben';
+$l['acp.userManagement.form.error.nameNotAvailable'] =  'The username is already taken';
+//$l['acp.userManagement.form.error.passwordError'] =  'Die Passwörter stimmen nicht überein';
+$l['acp.userManagement.form.error.passwordError'] =  'The passwords do not match';
+//$l['acp.userManagement.form.success.addUser'] =  'Der Benutzer wurde erfolgreich erstellt';
+$l['acp.userManagement.form.success.addUser'] =  'The user has been created successfully';
+//$l['acp.userManagement.form.success.editUser'] =  'The user has been edited successfully';
 $l['acp.userManagement.form.success.editUser'] =  'Der Benutzer wurde erfolgreich bearbeitet';
-//
-$l['acp.userManagement.form.success.deleteUser'] =  'Der Benutzer wurde erfolgreich gelöscht';
-//
+//$l['acp.userManagement.form.success.deleteUser'] =  'Der Benutzer wurde erfolgreich gelöscht';
+$l['acp.userManagement.form.success.deleteUser'] =  'The user has been deleted successfully';
+//$l['acp.userManagement.form.error.1110'] =  $l['acp.userManagement.form.error.nameNotAvailable'];
 $l['acp.userManagement.form.error.1110'] =  $l['acp.userManagement.form.error.nameNotAvailable'];
-//
-$l['acp.userManagement.form.error.1102'] =  'Der Benutzer konnte wegen fehlender Schreibrechte nicht gespeichert werden';
-//
-$l['acp.userManagement.form.error.1102.del'] =  'Der Benutzer konnte wegen fehlender Schreibrechte nicht gelöscht werden';
-//
-$l['acp.userManagement.form.error.1102.del'] =  'Der Benutzer konnte wegen fehlender Schreibrechte nicht gelöscht werden';
-//
-$l['acp.userManagement.form.error.1111.del'] =  'Der Hauptbenutzer darf nicht gelöscht werden';
-//
-$l['acp.userManagement.form.error.id'] =  'Ungültige Benutzer ID';
-//
-$l['acp.userManagement.form.error'] =  'Der Benutzer konnte nicht gespeichert werden';
+//$l['acp.userManagement.form.error.1102'] =  'Der Benutzer konnte wegen fehlender Schreibrechte nicht gespeichert werden';
+$l['acp.userManagement.form.error.1102'] =  'The user could not be saved due to lack of write access';
+//$l['acp.userManagement.form.error.1102.del'] =  'Der Benutzer konnte wegen fehlender Schreibrechte nicht gelöscht werden';
+$l['acp.userManagement.form.error.1102.del'] =  'The user could not be deleted due to lack of write access';
+//$l['acp.userManagement.form.error.1111.del'] =  'Der Hauptbenutzer darf nicht gelöscht werden';
+$l['acp.userManagement.form.error.1111.del'] =  'The main user can not be deleted';
+//$l['acp.userManagement.form.error.id'] =  'Ungültige Benutzer ID';
+$l['acp.userManagement.form.error.id'] =  'Invalid user ID';
+//$l['acp.userManagement.form.error'] =  'Der Benutzer konnte nicht gespeichert werden';
+$l['acp.userManagement.form.error'] =  'The user could not be saved';
 //
 $l['acp.userManagement.form.error.del'] =  'Der Benutzer konnte nicht gelöscht werden';
 //
